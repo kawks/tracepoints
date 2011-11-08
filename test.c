@@ -14,13 +14,32 @@ int fact(int n) {
 }
 
 int main() {
-  printf("result 1 is %d\n\n", fact(5));
+  trace_init();
 
-  enable(&fact_entry);
-  printf("result 2 is %d\n\n", fact(5));
+  #pragma omp parallel
+  {
+    #pragma omp single nowait
+    {
+      while (1)
+      {
+        #pragma omp task
+        {
+          printf("result 00 is %d\n\n", fact(5));
 
-  enable(&fact_exit);
-  printf("result 3 is %d\n\n", fact(5));
+          enable(&fact_entry);
+          printf("result 01 is %d\n\n", fact(5));
+
+          enable(&fact_exit);
+          printf("result 11 is %d\n\n", fact(5));
+
+          disable(&fact_entry);
+          printf("result 10 is %d\n\n", fact(5));
+
+          disable(&fact_exit);
+        }
+      }
+    }
+  }
 
   return 0;
 }

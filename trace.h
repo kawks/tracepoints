@@ -23,12 +23,12 @@ static inline void enable(tracepoint *point) {
 
 #else // not SIMPLE_TRACE
 
-#define NOP5 ".byte 0x0f, 0x1f, 0x44, 0x00, 0x00;"
+#define NOP8 ".byte 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00;"
 
 #define TRACE(_point, _args...)          \
   do {                                   \
     asm goto (                           \
-      "0: " NOP5                         \
+      "0: " NOP8                         \
       ".pushsection trace_table, \"a\";" \
       ".quad " #_point ", 0b, %l0;"      \
       ".popsection"                      \
@@ -44,7 +44,8 @@ struct trace_desc {
   void *jump_to;
 } __attribute__((packed));
 
+void trace_init();
 void enable(tracepoint *point);
-
+void disable(tracepoint *point);
 
 #endif // not SIMPLE_TRACE

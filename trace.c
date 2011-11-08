@@ -15,6 +15,13 @@ static void unprotect(void *addr, size_t len) {
   }
 }
 
+void trace_init() {
+  extern struct trace_desc trace_table_start[], trace_table_end[];
+  struct trace_desc *desc;
+  for (desc = trace_table_start; desc < trace_table_end; desc++)
+    unprotect(desc->jump_from, 8);
+}
+
 void enable(tracepoint *point) {
   extern struct trace_desc trace_table_start[], trace_table_end[];
   struct trace_desc *desc;
@@ -28,11 +35,21 @@ void enable(tracepoint *point) {
       abort();
     }
 
-    int32_t offset32 = offset;
-    unsigned char *dest = desc->jump_from;
-    unprotect(dest, 5);
-    dest[0] = 0xe9;
-    memcpy(dest+1, &offset32, 4);
+    volatile uint64_t *dest = desc->jump_from;
+    uint64_t instr = ((offset & ~((uint32_t)0)) << 8) | 0xe9;
+    *dest = instr;
+  }
+}
+
+void disable(tracepoint *point) {
+  extern struct trace_desc trace_table_start[], trace_table_end[];
+  struct trace_desc *desc;
+  for (desc = trace_table_start; desc < trace_table_end; desc++) {
+    if (desc->point != point)
+      continue;
+
+    volatile uint64_t *dest = desc->jump_from;
+    *dest = 0x0000000000841f0fULL;
   }
 }
 
